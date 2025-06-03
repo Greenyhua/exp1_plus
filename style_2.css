@@ -1,0 +1,14 @@
+#jspsych-experiment img {
+    max-width: 75px !important; /* 你想要的最大宽度 */
+    width: 100% !important;
+    height: auto !important;
+    display: block !important;
+    margin: 0 auto !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+#jspsych-experiment .task2-person-img {
+    all: unset;
+    position: absolute;
+    /* 其它定位由JS控制 */
+}

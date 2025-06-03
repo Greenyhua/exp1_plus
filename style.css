@@ -1,0 +1,20 @@
+body {
+    background: #f4f4f4;
+  }
+  
+  img.jspsych-image-keyboard-response-stimulus {
+    max-width: 300px !important;
+    height: auto !important;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px #0001;
+  }
+  
+  /* 居中jsPsych内容 */
+  #jspsych-experiment {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }

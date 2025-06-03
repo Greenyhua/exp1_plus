@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>心理学实验Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: sans-serif; text-align: center; margin: 40px; }
+    #stimulus { font-size: 2em; margin: 40px 0; }
+    #result { color: green; margin-top: 30px; font-size: 1.2em; }
+    button { font-size: 1.2em; padding: 10px 30px; }
+  </style>
+</head>
+<body>
+  <h2>心理学实验Demo</h2>
+  <div id="instructions">请按下空格键开始实验。</div>
+  <div id="stimulus" style="display:none;">请按下 "F" 或 "J" 键进行选择</div>
+  <div id="result"></div>
+  <button id="downloadBtn" style="display:none;">下载数据</button>
+
+  <script>
+    let startTime, endTime, response, rt;
+    let data = [];
+
+    document.addEventListener('keydown', function startExperiment(e) {
+      if (e.code === "Space") {
+        document.getElementById('instructions').style.display = 'none';
+        document.getElementById('stimulus').style.display = 'block';
+        startTime = performance.now();
+        document.removeEventListener('keydown', startExperiment);
+
+        document.addEventListener('keydown', function getResponse(ev) {
+          if (ev.key.toUpperCase() === "F" || ev.key.toUpperCase() === "J") {
+            endTime = performance.now();
+            response = ev.key.toUpperCase();
+            rt = Math.round(endTime - startTime);
+            document.getElementById('stimulus').style.display = 'none';
+            document.getElementById('result').textContent = `你的选择：${response}，反应时：${rt} ms`;
+
+            // 保存数据
+            data.push({response: response, rt: rt});
+            document.getElementById('downloadBtn').style.display = 'inline-block';
+
+            document.removeEventListener('keydown', getResponse);
+          }
+        });
+      }
+    });
+
+    // 下载数据
+    document.getElementById('downloadBtn').onclick = function() {
+      let csv = "response,rt\n" + data.map(d => `${d.response},${d.rt}`).join("\n");
+      let blob = new Blob([csv], {type: "text/csv"});
+      let url = URL.createObjectURL(blob);
+      let a = document.createElement('a');
+      a.href = url;
+      a.download = "result.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    };
+  </script>
+</body>
+</html>
