@@ -1,6 +1,6 @@
 const jsPsych = initJsPsych({display_element: 'jspsych-experiment'});
 
-let all_sequences = []; // 全局变量，方便多处引用
+let all_sequences = []; // 全局变量
 
 const password_error_trial = {
     type: jsPsychHtmlButtonResponse,
@@ -125,7 +125,7 @@ const fixation = {
 function generate_practice_sequences(subject_id) {
     let practice_sequences = [];
   
-    // self 部分（两个序列A、B），文件名如 self1_A1.jpg
+    // self 部分（两个序列A、B）
     let self_prefix = `static/stimuli/practice/${subject_id}/self${subject_id}_`;
     for (let s of ['A', 'B']) {
       let seq = [];
@@ -245,7 +245,7 @@ function get_animation_trials(all_sequences) {
     let animation_stopped = false;
     let image_trial_index = 0;
     let pressed_frame_idx = null; // 记录第几帧按下
-    let pressed_key = null; // 新增，记录按下的键
+    let pressed_key = null; 
 
     // 1. 初始化trial
     trials.push({
@@ -296,7 +296,7 @@ function get_animation_trials(all_sequences) {
       }
     });
 
-    // 2.5. 如果动画期间没按键，加一个“最后一帧图片等待按键”trial
+    // 2.5. 如果动画期间没按键，等待按键
     trials.push({
       type: jsPsychImageKeyboardResponse,
       stimulus: seq_obj.imgs[seq_obj.imgs.length - 1],
@@ -323,7 +323,7 @@ function get_animation_trials(all_sequences) {
       }
     });
 
-    // 3. 结果写入（用一个空trial，写入数据）
+    // 3. 结果写入
     trials.push({
       type: jsPsychHtmlKeyboardResponse,
       stimulus: '',
@@ -347,7 +347,7 @@ function get_animation_trials(all_sequences) {
   return trials;
 }
 
-// ====== 这里定义 exportKeyResults ======
+// ====== exportKeyResults ======
 function exportKeyResults() {
   // 1. 获取被试信息
   const info = jsPsych.data.get().filter({task: "subject_info"}).values()[0].response;
@@ -386,7 +386,7 @@ function exportKeyResults() {
   setTimeout(() => window.URL.revokeObjectURL(url), 100);
 }
 
-// 5. 汇总性结果表
+// 5. 结果表
 const show_results_trial = {
   type: jsPsychHtmlButtonResponse,
   stimulus: function(){
@@ -417,7 +417,7 @@ const show_results_trial = {
     });
     html += "</table>";
     html += "<p>请先对此界面拍照，然后联系主试。</p>";
-    // 这里加上导出按钮
+    // 导出按钮
     html += `<button id="my-export-btn" class="jspsych-btn" style="margin-top:20px;">导出本次数据（CSV）</button>`;
     html += "<p style='font-size:13px;color:#888;'>导出后请把CSV文件发给主试。</p>";
     return html;
@@ -433,9 +433,9 @@ const show_results_trial = {
 const exit_fullscreen_and_thank_you = {
   type: jsPsychFullscreen,
   fullscreen_mode: false,
-  message: '', // 不显示额外信息
+  message: '', 
   on_finish: function() {
-    // 继续展示结束语
+   
   }
 };
 
@@ -450,7 +450,7 @@ const end_message_trial = {
   `,
   choices: ['关闭页面'],
   on_finish: function() {
-    // 可选：自动关闭页面（部分浏览器会拦截），或者啥也不做
+    
   }
 };
 
