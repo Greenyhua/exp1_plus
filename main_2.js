@@ -80,7 +80,7 @@ const experiment_instruction = {
   stimulus: `
     <div style="text-align:center;">
       <h3>实验须知</h3>
-      <p>本实验大约持续20分钟，请保证周围环境安静、不受干扰。<br>
+      <p>本实验大约持续10分钟，请保证周围环境安静、不受干扰。<br>
       实验开始后会自动进入全屏。如需中途退出，请按ESC键（中途退出不会保存数据）。</p>
     </div>
   `,
@@ -614,7 +614,8 @@ let timeline = [
   
             // 合并返回
             return [...all_imgs, ...practice_imgs];
-          }
+          },
+          message: "<div style='text-align:center;font-size:20px;color:#f8f8f8'>实验加载中，请耐心等候</div>"
         },
         experiment_instruction,
         enter_fullscreen,
