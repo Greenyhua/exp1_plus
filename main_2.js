@@ -103,11 +103,12 @@ const instruction = {
         然后你会看到一张面孔的变化动画。<br>
         这张面孔可能是你自己，也可能是你认识的某位名人，也可能是一个陌生的中国人，或一个陌生的外国人。<br>
         当你可以辨认出这张面孔的身份时，请立即<strong>按键</strong>。<br>
+        请将右手的<strong><span style="color:#C82423;">食指、中指、无名指、小指</span></strong>分别放在<strong><span style="color:#C82423;">H、J、K、L</span></strong>键上。<br>
         如果这张面孔：<br>
-        是<strong><span style="color:#C82423;">你自己</span></strong>，请按<strong><span style="color:#C82423;">Q</span></strong><br>
-        是<strong><span style="color:#C82423;">你认识的名人</span></strong>，请按<strong><span style="color:#C82423;">R</span></strong><br>
-        是<strong><span style="color:#C82423;">陌生的中国人</span></strong>，请按<strong><span style="color:#C82423;">U</span></strong><br>
-        是<strong><span style="color:#C82423;">陌生的外国人</span></strong>，请按<strong><span style="color:#C82423;">P</span></strong><br>
+        是<strong><span style="color:#C82423;">你自己</span></strong>，请按<strong><span style="color:#C82423;">H</span></strong><br>
+        是<strong><span style="color:#C82423;">你认识的名人</span></strong>，请按<strong><span style="color:#C82423;">J</span></strong><br>
+        是<strong><span style="color:#C82423;">陌生的中国人</span></strong>，请按<strong><span style="color:#C82423;">K</span></strong><br>
+        是<strong><span style="color:#C82423;">陌生的外国人</span></strong>，请按<strong><span style="color:#C82423;">L</span></strong><br>
         请又快又准确地作出反应。</p>
         <p style="color:#888;margin-top:24px;">请按空格键继续</p>
       </div>
@@ -129,7 +130,7 @@ function generate_practice_sequences(subject_id) {
     let self_prefix = `static/stimuli/practice/${subject_id}/self${subject_id}_`;
     for (let s of ['A', 'B']) {
       let seq = [];
-      for (let i = 1; i <= 7; i++) {
+      for (let i = 1; i <= 13; i++) {
         seq.push(`${self_prefix}${s}${i}.jpg`);
       }
       practice_sequences.push({
@@ -144,7 +145,7 @@ function generate_practice_sequences(subject_id) {
     for (let cat of ['own', 'other', 'cele']) {
       for (let s of ['A', 'B']) {
         let seq = [];
-        for (let i = 1; i <= 7; i++) {
+        for (let i = 1; i <= 13; i++) {
           seq.push(`${common_prefix}${cat}_${s}${i}.jpg`);
         }
         practice_sequences.push({
@@ -159,18 +160,154 @@ function generate_practice_sequences(subject_id) {
     return jsPsych.randomization.shuffle(practice_sequences);
   }
 
+// 1. 判定函数
+function is_practice_response_correct(seq_type, key) {
+    if(seq_type === 'self') return key === 'h';
+    if(seq_type === 'cele') return key === 'j';
+    if(seq_type === 'own')  return key === 'k';
+    if(seq_type === 'other')return key === 'l';
+    return false;
+  }
+  
+  // 2. 练习动画+反馈
+  function get_practice_animation_trials(practice_sequences) {
+    let trials = [];
+    practice_sequences.forEach((seq_obj, idx) => {
+      trials.push(fixation);
+  
+      let animation_start_time = null;
+      let animation_rt = null;
+      let animation_stopped = false;
+      let image_trial_index = 0;
+      let pressed_frame_idx = null;
+      let pressed_key = null;
+  
+      trials.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: '',
+        choices: "NO_KEYS",
+        trial_duration: 0,
+        on_start: function(){
+          animation_start_time = performance.now();
+          animation_rt = null;
+          animation_stopped = false;
+          image_trial_index = 0;
+          pressed_frame_idx = null;
+          pressed_key = null;
+        }
+      });
+  
+      trials.push({
+        timeline: [
+          {
+            type: jsPsychImageKeyboardResponse,
+            stimulus: function(){
+              return seq_obj.imgs[image_trial_index];
+            },
+            stimulus_width: 200,
+            choices: ['h', 'j', 'k', 'l'],
+            trial_duration: 1000,
+            response_ends_trial: true,
+            data: {
+              seq_type: seq_obj.seq_type,
+              seq_name: seq_obj.seq_name,
+              task: 'face_animation'
+            },
+            on_finish: function(data) {
+              if(data.response !== null && animation_rt === null) {
+                animation_rt = performance.now() - animation_start_time;
+                animation_stopped = true;
+                pressed_frame_idx = image_trial_index + 1;
+                pressed_key = data.response;
+              }
+              image_trial_index += 1;
+            }
+          }
+        ],
+        loop_function: function(){
+          return (!animation_stopped) && (image_trial_index < seq_obj.imgs.length);
+        }
+      });
+  
+      trials.push({
+        type: jsPsychImageKeyboardResponse,
+        stimulus: seq_obj.imgs[seq_obj.imgs.length - 1],
+        stimulus_width: 200,
+        choices: ['h', 'j', 'k', 'l'],
+        trial_duration: null,
+        response_ends_trial: true,
+        data: {
+          seq_type: seq_obj.seq_type,
+          seq_name: seq_obj.seq_name,
+          task: 'face_animation_hold'
+        },
+        on_start: function(trial){
+          trial.trial_duration = null;
+          if(animation_stopped) trial.trial_duration = 0;
+        },
+        on_finish: function(data){
+          if(!animation_stopped) {
+            animation_rt = performance.now() - animation_start_time;
+            animation_stopped = true;
+            pressed_frame_idx = seq_obj.imgs.length;
+            pressed_key = data.response;
+          }
+        }
+      });
+  
+      trials.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: '',
+        trial_duration: 0,
+        choices: "NO_KEYS",
+        data: {
+          seq_type: seq_obj.seq_type,
+          seq_name: seq_obj.seq_name,
+          task: "animation_result"
+        },
+        on_start: function(trial) {},
+        on_finish: function(data){
+          data.animation_rt = animation_rt;
+          data.pressed_frame_idx = pressed_frame_idx;
+          data.pressed_key = pressed_key;
+        }
+      });
+  
+      // 反馈
+      trials.push({
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: function() {
+          const correct = is_practice_response_correct(seq_obj.seq_type, pressed_key);
+          return `<div style="font-size:28px;color:${correct ? '#30C23F' : '#C82423'};text-align:center;">
+            ${correct ? '选择正确 ✓' : '选择错误 ✗'}
+          </div>`;
+        },
+        choices: "NO_KEYS",
+        trial_duration: 500,
+        data: {
+          seq_type: seq_obj.seq_type,
+          seq_name: seq_obj.seq_name,
+          task: "practice_feedback"
+        }
+      });
+    });
+    return trials;
+  }
+
   const practice_instruction = {
     type: jsPsychHtmlKeyboardResponse,
     stimulus: `
       <div style="text-align:center; font-size:24px; line-height:1.8;">
         <h2>练习阶段</h2>
         <p>接下来是练习环节。练习流程与正式实验完全一致。</p>
+        在练习环节，你会知道自己的选择是否正确。<br>
         提示：<br>
+        请将右手的<strong><span style="color:#C82423;">食指、中指、无名指、小指</span></strong>分别放在<strong><span style="color:#C82423;">H、J、K、L</span></strong>键上。<br>
         如果这张面孔：<br>
-        是<strong><span style="color:#C82423;">你自己</span></strong>，请按<strong><span style="color:#C82423;">Q</span></strong><br>
-        是<strong><span style="color:#C82423;">你认识的名人</span></strong>，请按<strong><span style="color:#C82423;">R</span></strong><br>
-        是<strong><span style="color:#C82423;">陌生的中国人</span></strong>，请按<strong><span style="color:#C82423;">U</span></strong><br>
-        是<strong><span style="color:#C82423;">陌生的外国人</span></strong>，请按<strong><span style="color:#C82423;">P</span></strong><br>
+        是<strong><span style="color:#C82423;">你自己</span></strong>，请按<strong><span style="color:#C82423;">H</span></strong><br>
+        是<strong><span style="color:#C82423;">你认识的名人</span></strong>，请按<strong><span style="color:#C82423;">J</span></strong><br>
+        是<strong><span style="color:#C82423;">陌生的中国人</span></strong>，请按<strong><span style="color:#C82423;">K</span></strong><br>
+        是<strong><span style="color:#C82423;">陌生的外国人</span></strong>，请按<strong><span style="color:#C82423;">L</span></strong><br>
         请又快又准确地作出反应。</p>
         <p style="color:#888;margin-top:24px;">请按空格键开始练习</p>
       </div>
@@ -184,12 +321,15 @@ function generate_practice_sequences(subject_id) {
       <div style="text-align:center; font-size:24px; line-height:1.8;">
         <h2>练习完成</h2>
         <p>您已完成练习。<br>请按空格键，进入正式实验。</p>
+        正式实验大约需要8分钟完成。<br>
+        在正式实验，你<strong>不会</strong>知道自己的选择是否正确。<br>
         提示：<br>
+        请将右手的<strong><span style="color:#C82423;">食指、中指、无名指、小指</span></strong>分别放在<strong><span style="color:#C82423;">H、J、K、L</span></strong>键上。<br>
         如果这张面孔：<br>
-        是<strong><span style="color:#C82423;">你自己</span></strong>，请按<strong><span style="color:#C82423;">Q</span></strong><br>
-        是<strong><span style="color:#C82423;">你认识的名人</span></strong>，请按<strong><span style="color:#C82423;">R</span></strong><br>
-        是<strong><span style="color:#C82423;">陌生的中国人</span></strong>，请按<strong><span style="color:#C82423;">U</span></strong><br>
-        是<strong><span style="color:#C82423;">陌生的外国人</span></strong>，请按<strong><span style="color:#C82423;">P</span></strong><br>
+        是<strong><span style="color:#C82423;">你自己</span></strong>，请按<strong><span style="color:#C82423;">H</span></strong><br>
+        是<strong><span style="color:#C82423;">你认识的名人</span></strong>，请按<strong><span style="color:#C82423;">J</span></strong><br>
+        是<strong><span style="color:#C82423;">陌生的中国人</span></strong>，请按<strong><span style="color:#C82423;">K</span></strong><br>
+        是<strong><span style="color:#C82423;">陌生的外国人</span></strong>，请按<strong><span style="color:#C82423;">L</span></strong><br>
         请又快又准确地作出反应。</p>
         <p style="color:#888;margin-top:24px;">请按空格键进入正式实验</p>
       </div>
@@ -204,7 +344,7 @@ function generate_sequences(subject_id) {
   let self_prefix = `static/stimuli/${subject_id}/self${subject_id}_`;
   for (let s of ['A', 'B', 'C', 'D', 'E', 'F']) {
     let seq = [];
-    for (let i = 1; i <= 7; i++) {
+    for (let i = 1; i <= 13; i++) {
       seq.push(`${self_prefix}${s}${i}.jpg`);
     }
     all_sequences.push({
@@ -220,7 +360,7 @@ function generate_sequences(subject_id) {
   for (let cat of ['cele', 'other', 'own']) {
     for (let s of ['A', 'B', 'C', 'D', 'E', 'F']) {
       let seq = [];
-      for (let i = 1; i <= 7; i++) {
+      for (let i = 1; i <= 13; i++) {
         seq.push(`${common_prefix}${cat}_${s}${i}.jpg`);
       }
       all_sequences.push({
@@ -271,9 +411,9 @@ function get_animation_trials(all_sequences) {
           stimulus: function(){
             return seq_obj.imgs[image_trial_index];
           },
-          stimulus_width: 120,
-          choices: ['q', 'r', 'u', 'p'],
-          trial_duration: 750,
+          stimulus_width: 200,
+          choices: ['h', 'j', 'k', 'l'],
+          trial_duration: 1000,
           response_ends_trial: true,
           data: {
             seq_type: seq_obj.seq_type,
@@ -300,8 +440,8 @@ function get_animation_trials(all_sequences) {
     trials.push({
       type: jsPsychImageKeyboardResponse,
       stimulus: seq_obj.imgs[seq_obj.imgs.length - 1],
-      stimulus_width: 120,
-      choices: ['q', 'r', 'u', 'p'],
+      stimulus_width: 200,
+      choices: ['h', 'j', 'k', 'l'],
       trial_duration: null, // 无限等待
       response_ends_trial: true,
       data: {
@@ -419,10 +559,10 @@ const show_results_trial = {
     html += "<p>请先对此界面拍照，然后联系主试。</p>";
     // 这里加上导出按钮
     html += `<button id="my-export-btn" class="jspsych-btn" style="margin-top:20px;">导出本次数据（CSV）</button>`;
-    html += "<p style='font-size:13px;color:#888;'>导出后请把CSV文件发给主试。</p>";
+    html += "<p style='font-size:15px;color:#f8f8f8;'>请按esc退出全屏，查看数据文件是否已保存</p>";
     return html;
   },
-  choices: ['主试已通知我点击此按钮'],
+  choices: ['文件已发送给主试，点击完成'],
   on_load: function() {
     document.getElementById("my-export-btn").onclick = exportKeyResults;
   }
@@ -483,15 +623,14 @@ let timeline = [
         // ========== 练习阶段 ==========
         practice_instruction,
         {
-          timeline: [],
-          on_timeline_start: function() {
-            // 生成练习序列
-            const infoTrial = jsPsych.data.get().filter({task: "subject_info"}).values()[0];
-            const subject_id = infoTrial && infoTrial.response ? infoTrial.response.subject_id : "X";
-            const practice_sequences = generate_practice_sequences(subject_id);
-            this.timeline.push(...get_animation_trials(practice_sequences));
-          }
-        },
+            timeline: [],
+            on_timeline_start: function() {
+              const infoTrial = jsPsych.data.get().filter({task: "subject_info"}).values()[0];
+              const subject_id = infoTrial && infoTrial.response ? infoTrial.response.subject_id : "X";
+              const practice_sequences = generate_practice_sequences(subject_id);
+              this.timeline.push(...get_practice_animation_trials(practice_sequences)); // ← 用新函数
+            }
+          },
         practice_end_instruction,
         // ========== 正式实验阶段 ==========
         {
