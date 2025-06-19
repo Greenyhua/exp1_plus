@@ -81,7 +81,9 @@ const experiment_instruction = {
     <div style="text-align:center;">
       <h3>实验须知</h3>
       <p>本实验大约持续10分钟，请保证周围环境安静、不受干扰。<br>
-      实验开始后会自动进入全屏。如需中途退出，请按ESC键（中途退出不会保存数据）。</p>
+      实验开始后会自动进入全屏。<br>
+      按ESC键可退出全屏（中途退出不会保存数据）。<br>
+      如非意外，<strong><span style="color:#C82423;">请勿中途退出全屏</span></strong></p>
     </div>
   `,
   choices: ['确认，进入实验']
