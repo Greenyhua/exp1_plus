@@ -169,7 +169,7 @@ function generate_practice_sequences(subject_id) {
   }
 
 // 1. 判定函数
-function is_practice_response_correct(seq_type, key) {
+function is_response_correct(seq_type, key) {
     if(seq_type === 'self') return key === 'h';
     if(seq_type === 'cele') return key === 'j';
     if(seq_type === 'own')  return key === 'k';
@@ -278,6 +278,8 @@ function is_practice_response_correct(seq_type, key) {
           data.animation_rt = animation_rt;
           data.pressed_frame_idx = pressed_frame_idx;
           data.pressed_key = pressed_key;
+          data.note = is_response_correct(seq_obj.seq_type, pressed_key) ? 'p' : 'n';
+          
         }
       });
   
@@ -285,7 +287,7 @@ function is_practice_response_correct(seq_type, key) {
       trials.push({
         type: jsPsychHtmlKeyboardResponse,
         stimulus: function() {
-          const correct = is_practice_response_correct(seq_obj.seq_type, pressed_key);
+          const correct = is_response_correct(seq_obj.seq_type, pressed_key);
           return `<div style="font-size:28px;color:${correct ? '#30C23F' : '#C82423'};text-align:center;">
             ${correct ? '选择正确 ✓' : '选择错误 ✗'}
           </div>`;
@@ -492,6 +494,7 @@ function get_animation_trials(all_sequences) {
         data.animation_rt = animation_rt;
         data.pressed_frame_idx = pressed_frame_idx;
         data.pressed_key = pressed_key;
+        data.note = is_response_correct(seq_obj.seq_type, pressed_key) ? 'p' : 'n';
 
         // 如果是最后一个trial，记录结束时间 ===
         // all_sequences.length - 1 是最后一个
@@ -527,7 +530,7 @@ function exportKeyResults() {
   }
 
   // 3. 组装CSV
-  let csv = "subject_id,name,age,gender,exp_start_time,exp_end_time,seq_name,seq_type,animation_rt,pressed_frame_idx,pressed_key\n";
+  let csv = "subject_id,name,age,gender,exp_start_time,exp_end_time,seq_name,seq_type,animation_rt,pressed_frame_idx,pressed_key,note\n";
   trials.forEach(t => {
     const row = [
       subject_id,
@@ -540,7 +543,8 @@ function exportKeyResults() {
       t.seq_type || "",
       (t.animation_rt === "NA" ? "NA" : Math.round(t.animation_rt) || ""),
       t.pressed_frame_idx ?? "",
-      t.pressed_key ?? ""
+      t.pressed_key ?? "",
+      t.note || ""
     ];
     csv += row.join(",") + "\n";
   });
@@ -572,7 +576,8 @@ const show_results_trial = {
     }
   
     let html = `
-      <h3>实验结果</h3>
+      <h2>实验结果</h2>
+      <p style="color:#C82423;font-size:20px;"><b>请把此表格拍照给主试（可以下滑拍两张照片）</b></p>
       <p>被试编号：${info.subject_id} &emsp; 姓名：${info.name} &emsp; 年龄：${info.age} &emsp; 性别：${info.gender == '1' ? '男' : '女'}</p>
       <p>实验开始时间：<strong>${formatTime(exp_start)}</strong> &emsp; 实验结束时间：<strong>${formatTime(exp_end)}</strong></p>
       <table border="1" style="margin:auto; border-collapse:collapse;">
@@ -583,6 +588,7 @@ const show_results_trial = {
           <th>反应时(ms)</th>
           <th>按键时帧号</th>
           <th>按键</th>
+          <th>note</th>
         </tr>
     `;
     trials.forEach((t, idx) => {
@@ -593,17 +599,22 @@ const show_results_trial = {
         <td>${t.animation_rt === "NA" ? "NA" : Math.round(t.animation_rt)}</td>
         <td>${t.pressed_frame_idx ?? ""}</td>
         <td>${t.pressed_key ?? ""}</td>
+        <td>${t.note || ""}</td>
       </tr>`;
     });
-    html += "</table>";
-    html += "<p>请先对此界面拍照，然后联系主试。</p>";
+    html += `</table>
+    <p style="color:#C82423;font-size:20px;margin-top:16px;"><b>请把此表格完整拍照给主试</b></p>
+    <p style="font-size:20px;margin-top:16px;">请先对此界面拍照，然后<strong><span style="color:#C82423;">点击下方按钮下载文件</span></strong>（如果看不到按钮，请鼠标下滑），并联系主试。</p>
+  `;
     // 导出按钮
     html += `<button id="my-export-btn" class="jspsych-btn" style="margin-top:20px;">导出本次数据（CSV）</button>`;
-    html += "<p style='font-size:15px;color:#f8f8f8;'>请按esc退出全屏，查看数据文件是否已保存</p>";
+    html += "<p style='font-size:20px;color:#f8f8f8;'>请按esc退出全屏，查看数据文件是否已保存。</p>";
+    html += "<p style='font-size:20px;color:#C82423;'>请先不要关闭网页！</p>";
     return html;
   },
-  choices: ['文件已发送给主试，点击完成'],
+  choices: ['联系主试后，主试告知我可以点击此按钮。'],
   on_load: function() {
+    window.scrollTo(0, 0); // 自动滚动到顶部
     document.getElementById("my-export-btn").onclick = exportKeyResults;
   }
 };
