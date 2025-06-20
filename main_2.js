@@ -1,6 +1,8 @@
 const jsPsych = initJsPsych({display_element: 'jspsych-experiment'});
 
 let all_sequences = []; // 全局
+let exp_start_time = null;
+let exp_end_time = null;
 
 const password_error_trial = {
     type: jsPsychHtmlButtonResponse,
@@ -20,7 +22,11 @@ const password_error_trial = {
       <label>密码：<input name="password" type="text" required autocomplete="off"></label>
     `,
     button_label: '提交',
-    data: {task: 'subject_info'}
+    data: {task: 'subject_info'},
+    on_finish: function() {
+      exp_start_time = Date.now(); // 毫秒
+      jsPsych.data.addProperties({exp_start_time: exp_start_time});
+    }
   };
   
   const password_check = {
@@ -483,7 +489,14 @@ function get_animation_trials(all_sequences) {
         data.animation_rt = animation_rt;
         data.pressed_frame_idx = pressed_frame_idx;
         data.pressed_key = pressed_key;
+
+        // 如果是最后一个trial，记录结束时间 ===
+        // all_sequences.length - 1 是最后一个
+        if (idx === all_sequences.length - 1) {
+          exp_end_time = Date.now();
+          jsPsych.data.addProperties({exp_end_time: exp_end_time});
       }
+    }
     });
   });
   return trials;
@@ -500,15 +513,26 @@ function exportKeyResults() {
 
   // 2. 获取实验trial数据
   const trials = jsPsych.data.get().filter({task: "animation_result"}).values();
+// 时间
+  const exp_start = jsPsych.data.get().values()[0].exp_start_time || exp_start_time;
+  const exp_end = jsPsych.data.get().values()[0].exp_end_time || exp_end_time;
+  function formatTime(ts) {
+    if (!ts) return "";
+    const d = new Date(ts);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} `
+         + `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+  }
 
   // 3. 组装CSV
-  let csv = "subject_id,name,age,gender,seq_name,seq_type,animation_rt,pressed_frame_idx,pressed_key\n";
+  let csv = "subject_id,name,age,gender,exp_start_time,exp_end_time,seq_name,seq_type,animation_rt,pressed_frame_idx,pressed_key\n";
   trials.forEach(t => {
     const row = [
       subject_id,
       name,
       age,
       gender,
+      formatTime(exp_start),
+      formatTime(exp_end),
       t.seq_name || "",
       t.seq_type || "",
       (t.animation_rt === "NA" ? "NA" : Math.round(t.animation_rt) || ""),
@@ -534,9 +558,20 @@ const show_results_trial = {
   stimulus: function(){
     const info = jsPsych.data.get().filter({task: "subject_info"}).values()[0].response;
     const trials = jsPsych.data.get().filter({task: "animation_result"}).values();
+    const exp_start = jsPsych.data.get().values()[0].exp_start_time || exp_start_time;
+    const exp_end = jsPsych.data.get().values()[0].exp_end_time || exp_end_time;
+    // 格式化时间
+    function formatTime(ts) {
+      if (!ts) return "";
+      const d = new Date(ts);
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} `
+           + `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+    }
+  
     let html = `
       <h3>实验结果</h3>
       <p>被试编号：${info.subject_id} &emsp; 姓名：${info.name} &emsp; 年龄：${info.age} &emsp; 性别：${info.gender == '1' ? '男' : '女'}</p>
+      <p>实验开始时间：<strong>${formatTime(exp_start)}</strong> &emsp; 实验结束时间：<strong>${formatTime(exp_end)}</strong></p>
       <table border="1" style="margin:auto; border-collapse:collapse;">
         <tr>
           <th>序号</th>
