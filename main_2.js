@@ -108,8 +108,8 @@ const instruction = {
       <div style="text-align:center; font-size:24px; line-height:1.8;">
         <h2>任务指导语</h2>
         <p>每个回合，你会看到屏幕中央出现一个十字。<br>
-        然后你会看到一张面孔的变化动画。<br>
-        这张面孔可能是你自己，也可能是你认识的某位名人，也可能是一个陌生的中国人，或一个陌生的外国人。<br>
+        然后你会看到一张机器人面孔变化为一个人类面孔的动画。<br>
+        这张人类面孔可能是你自己，也可能是你认识的某位名人，也可能是一个陌生的中国人，或一个陌生的外国人。<br>
         当你可以辨认出这张面孔的身份时，请立即<strong>按键</strong>。<br>
         请将右手的<strong><span style="color:#C82423;">食指、中指、无名指、小指</span></strong>分别放在<strong><span style="color:#C82423;">H、J、K、L</span></strong>键上。<br>
         如果这张面孔：<br>
@@ -308,6 +308,9 @@ function is_practice_response_correct(seq_type, key) {
       <div style="text-align:center; font-size:24px; line-height:1.8;">
         <h2>练习阶段</h2>
         <p>接下来是练习环节。练习流程与正式实验完全一致。</p>
+        <p>在十字出现后，你会看到一张机器人面孔变化为一个人类面孔的动画。<br>
+        这张人类面孔可能是你自己，也可能是你认识的某位名人，也可能是一个陌生的中国人，或一个陌生的外国人。<br>
+        当你可以辨认出这张人类面孔的身份时，请立即<strong>按键</strong>。<br>
         在练习环节，你会知道自己的选择是否正确。<br>
         提示：<br>
         请将右手的<strong><span style="color:#C82423;">食指、中指、无名指、小指</span></strong>分别放在<strong><span style="color:#C82423;">H、J、K、L</span></strong>键上。<br>
